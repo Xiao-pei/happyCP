@@ -1,7 +1,5 @@
 #ifndef __LEXICAL_H__
 #define __LEXICAL_H__
-#include "stuff.h"
-#include "Token.h"
 #include"StateMachine.h"
 
 class Lexical //the main program, Lexical Analyzer
