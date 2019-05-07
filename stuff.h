@@ -25,6 +25,9 @@ enum TokenType
 	VOID,
 	TRUE,
 	FALSE,
+	BREAK,
+	RETURN,
+	CONST,
 	/* special symbols */
 	ASSIGN,
 	EQUAL,
@@ -41,20 +44,22 @@ enum TokenType
 	LOGICALNOT,
 	TIMES,
 	GREATERTHAN,
-	LPAREN,
+	LPAREN,		// "("
 	RPAREN,
 	SEMICOLON,
-	LBRACE,
+	LBRACE,		// "{"
 	RBRACE,
 	COMMA,
 	DIVISION,
 	INCREMENT,
 	DECREMENT,
+	LBRACKET,	//"["
+	RBRACKET,
 	ERROR,
 	ENDOFFILE
 };
 
-static string TokenTypeNames[40] = {
+static string TokenTypeNames[45] = {
 	"IDENTIFIER",
 	"NUMBER",
 	"IF",
@@ -70,6 +75,10 @@ static string TokenTypeNames[40] = {
 	"VOID",
 	"TRUE",
 	"FALSE",
+	"BREAK",
+	"RETURN",
+	"CONST",
+	// symbols
 	"ASSIGN",
 	"EQUAL",
 	"NOTEQUAL",
@@ -94,16 +103,19 @@ static string TokenTypeNames[40] = {
 	"DIVISION",
 	"INCREMENT",
 	"DECREMENT",
+	"LBRACKET",	//"["
+	"RBRACKET",
 	"ERROR"
 };
 static map<string, TokenType> RWordsMap = {
-	{"if",IF},{"else",ELSE},{"while",WHILE},{"do",DO},{"char",CHAR},
+	{"if",IF},{"else",ELSE},{"while",WHILE},{"do",DO},{"char",CHAR},{"const",CONST},
 	{"int",INT},{"float",FLOAT},{"double",DOUBLE},{"bool",BOOL},{"void",VOID},
-	{"true",TRUE},{"false",FALSE},{"for",FOR}
-};
+	{"true",TRUE},{"false",FALSE},{"for",FOR},{"break",BREAK},{"return",RETURN}
+}; // add reserved words into ths list
 
 bool static isOthers(char c)
 {
+	char a = L'2';
 	return !isdigit(c) && !isalpha(c);
 }
 

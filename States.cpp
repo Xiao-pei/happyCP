@@ -63,6 +63,10 @@ BaseState* BeginStates::GetNextState(char c)
 			return new ENDStates("}", RBRACE);
 		case ',':
 			return new ENDStates(",", COMMA);
+		case '[':
+			return new ENDStates("[", LBRACKET);
+		case ']':
+			return new ENDStates("]", RBRACKET);
 		default:
 			name += c;
 			return new ENDStates(name, ERROR);
