@@ -68,6 +68,20 @@ public:
 		name = s;
 		token_type = NUMBER;
 	}
+
+	BaseState* GetNextState(char c) override;
+	bool isEndState() override { return false; }
+};
+
+class CHARStates : public BaseState //simple char
+{
+public:
+	CHARStates(string s)
+	{
+		name = s;
+		token_type = NUMBER;
+	}
+
 	BaseState* GetNextState(char c) override;
 	bool isEndState() override { return false; }
 };

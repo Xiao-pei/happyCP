@@ -3,7 +3,7 @@
 
 Lexical::Lexical()
 {
-	state_machine = NULL;
+	state_machine = nullptr;
 }
 
 Lexical::~Lexical()

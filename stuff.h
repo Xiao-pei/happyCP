@@ -28,6 +28,7 @@ enum TokenType
 	BREAK,
 	RETURN,
 	CONST,
+	ENUM,
 	/* special symbols */
 	ASSIGN,
 	EQUAL,
@@ -44,22 +45,33 @@ enum TokenType
 	LOGICALNOT,
 	TIMES,
 	GREATERTHAN,
-	LPAREN,		// "("
+	// "("
+	LPAREN,
 	RPAREN,
 	SEMICOLON,
-	LBRACE,		// "{"
+	// "{"
+	LBRACE,
 	RBRACE,
 	COMMA,
 	DIVISION,
 	INCREMENT,
 	DECREMENT,
-	LBRACKET,	//"["
+	//"["
+	LBRACKET,
 	RBRACKET,
 	ERROR,
 	ENDOFFILE
 };
 
-static string TokenTypeNames[45] = {
+enum TreeNodeKind
+{
+	VARIABLE_DECLARTION = ENDOFFILE+1,
+	FUNCTION_DECLARTION,
+	ARRAY
+
+};
+
+static string TokenTypeNames[46] = {
 	"IDENTIFIER",
 	"NUMBER",
 	"IF",
@@ -78,6 +90,7 @@ static string TokenTypeNames[45] = {
 	"BREAK",
 	"RETURN",
 	"CONST",
+	"ENUM",
 	// symbols
 	"ASSIGN",
 	"EQUAL",
@@ -103,14 +116,14 @@ static string TokenTypeNames[45] = {
 	"DIVISION",
 	"INCREMENT",
 	"DECREMENT",
-	"LBRACKET",	//"["
+	"LBRACKET", //"["
 	"RBRACKET",
 	"ERROR"
 };
 static map<string, TokenType> RWordsMap = {
-	{"if",IF},{"else",ELSE},{"while",WHILE},{"do",DO},{"char",CHAR},{"const",CONST},
-	{"int",INT},{"float",FLOAT},{"double",DOUBLE},{"bool",BOOL},{"void",VOID},
-	{"true",TRUE},{"false",FALSE},{"for",FOR},{"break",BREAK},{"return",RETURN}
+	{"if", IF}, {"else", ELSE}, {"while", WHILE}, {"do", DO}, {"char", CHAR}, {"const", CONST},
+	{"int", INT}, {"float", FLOAT}, {"double", DOUBLE}, {"bool", BOOL}, {"void", VOID},{"enum",ENUM},
+	{"true", TRUE}, {"false", FALSE}, {"for", FOR}, {"break", BREAK}, {"return", RETURN}
 }; // add reserved words into ths list
 
 bool static isOthers(char c)

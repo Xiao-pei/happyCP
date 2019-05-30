@@ -9,7 +9,7 @@ BeginStates::BeginStates()
 BaseState* BeginStates::GetNextState(char c)
 {
 	BaseState* nexstate;
-	if (c == EOF)
+	if (c == EOF || c<-1)
 	{
 		nexstate = new ENDStates("EOF", ENDOFFILE);
 	}
@@ -67,6 +67,8 @@ BaseState* BeginStates::GetNextState(char c)
 			return new ENDStates("[", LBRACKET);
 		case ']':
 			return new ENDStates("]", RBRACKET);
+		case '\'':
+			return new CHARStates("'");
 		default:
 			name += c;
 			return new ENDStates(name, ERROR);
@@ -196,9 +198,8 @@ BaseState* SymbolsStates::GetNextState(char c)
 
 		putback = true;
 		return new ENDStates("!", LOGICALNOT);
-
 	}
-	if(name == "+")
+	if (name == "+")
 	{
 		if (c == '+')
 			return new ENDStates("++", INCREMENT);
@@ -280,4 +281,21 @@ BaseState* INTStates::GetNextState(char c)
 		putback = true;
 		return new ENDStates(name, token_type);
 	}
+}
+
+BaseState* CHARStates::GetNextState(char c)
+{
+	if (isdigit(c) || isalpha(c))
+	{
+		if (name != "'")
+			return new ENDStates(name, ERROR);
+		name += c;
+		return new CHARStates(name);
+	}
+	if (c == '\'' && name.length() == 2)
+	{
+		name += c;
+		return new ENDStates(name, NUMBER);
+	}
+	return new ENDStates(name, ERROR);
 }

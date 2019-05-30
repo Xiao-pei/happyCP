@@ -4,7 +4,6 @@
 
 class Lexical //the main program, Lexical Analyzer
 {
-private:
 	string filename;
 	StateMachine* state_machine;
 public:
