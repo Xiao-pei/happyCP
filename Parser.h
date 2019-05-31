@@ -14,13 +14,15 @@ private:
 	void SyntaxError(string);
 	void Match(TokenType);
 	void DeclarationList();
-	void Declaration(TreeNode*&);
+	TreeNode* Declaration();
 	//void VariableDeclaration();
-	void VariableDeclaratorList(TreeNode*&);
-	void DirectDeclarator(TreeNode*&);
-	void FunctionDeclaration(TreeNode*&);
-	void Statement();
-	void StatementList();
+	TreeNode* VariableDeclaratorList();
+	TreeNode* DirectDeclarator();
+	TreeNode* FunctionDeclaration();
+	TreeNode* ParameterList();
+	TreeNode* FunctionBody();
+	TreeNode* Statement();
+	TreeNode* StatementList();
 public:
 	Parser(Lexical*);
 	void Parse();

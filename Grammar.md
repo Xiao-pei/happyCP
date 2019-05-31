@@ -30,13 +30,21 @@ Declarations
 
 11. parameter_list -> type_specifier parameter_id_list |  parameter_list, type_specifier parameter_id_list
 
-12. parameter_id_list  -> parameter_id | parameter_id , parameter_id_list 
+12. parameter_id_list  -> parameter_id | parameter_id_list , parameter_id
 
-13. parameter_id -> **IDENTIFIER** |  **IDENTIFIER** [NUMBER]
+13. parameter_id -> **IDENTIFIER** |  **IDENTIFIER** [ ]
 
     
 
-14. compound_statement -> { local_declarations  statement_list }
+14. compound_statement -> { declaration_list  statement_list } | ;
 
-15. local_declarations -> local_declarations scoped_variable_declaration | *epsilon* 
+15. declaration_list  -> declaration  | declaration_list  declaration 
+
+16. statement_list -> *epsilon* | statement statement_list 
+
+17. statement  ->   expression_statement| compound_statement |  expression_statement  | jump_statement | iteration_statement |   selection_statement 
+
+18. iteration_statement  -> **WHILE** ( expression ) statement 
+
+19.  selection_statement  -> **IF** ( expression ) statement | **IF** ( expression ) statement  **ELSE** statement 
 

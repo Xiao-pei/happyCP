@@ -41,22 +41,26 @@ void Parser::Program()
 
 void Parser::DeclarationList()
 {
-	Declaration(root_node);
+	root_node = Declaration();
 	TreeNode* current_node = root_node;
 	while (current->token_type != ENDOFFILE && current->token_type != ELSE)
 	{
 		if (root_node != nullptr)
-			Declaration(current_node->sibling);
+		{
+			TreeNode* tmp= Declaration();
+			current_node->sibling = tmp;
+			current_node = tmp;
+		}
 		else
-			Declaration(root_node);
+			root_node = Declaration();
 	}
 }
 
-void Parser::Declaration(TreeNode* & current_node)
+TreeNode* Parser::Declaration()
 {
 	TokenType base_type = ERROR;
 	TreeNodeKind default_kind = VARIABLE_DECLARTION;
-	current_node = new TreeNode();
+	TreeNode* current_node = new TreeNode();
 	switch (current->token_type)
 	{
 	case VOID:
@@ -67,7 +71,7 @@ void Parser::Declaration(TreeNode* & current_node)
 		current_node->description = "Function declaration";
 		current_node->left_child = new TreeNode(base_type);
 		Match(IDENTIFIER);
-		FunctionDeclaration(current_node->right_child);
+		current_node->right_child = FunctionDeclaration();
 		break;
 	case CHAR:
 		Match(CHAR);
@@ -89,6 +93,9 @@ void Parser::Declaration(TreeNode* & current_node)
 		Match(BOOL);
 		base_type = BOOL;
 		break;
+	case ENUM:
+		Match(ENUM);
+		break;
 	}
 	if (current->token_type == SEMICOLON)
 	{
@@ -99,7 +106,8 @@ void Parser::Declaration(TreeNode* & current_node)
 	{
 		current_node->kind = VARIABLE_DECLARTION;
 		current_node->description = "Variable declartion";
-		VariableDeclaratorList(current_node);
+		current_node->left_child = new TreeNode(base_type);
+		current_node->right_child = VariableDeclaratorList();
 	}
 	else //could be function declartion or variable declartion 
 	{
@@ -112,50 +120,46 @@ void Parser::Declaration(TreeNode* & current_node)
 			current_node->token_name = token_name;
 			current_node->description = "Function declaration";
 			current_node->left_child = new TreeNode(base_type);
-			FunctionDeclaration(current_node->right_child);
+			current_node->right_child = FunctionDeclaration();
 		}
 
-		else //the leftchild holds variable type, and rightchild holds declarators
+		else //the left child holds variable type, and right child and its sibling holds declarators
 		{
 			current_node->kind = VARIABLE_DECLARTION;
 			current_node->left_child = new TreeNode(base_type);
 			current_node->description = "Variable declaration";
 			current_node->right_child = new TreeNode(IDENTIFIER, token_name);
-			VariableDeclaratorList(current_node);
+			if(current->token_type==COMMA)
+				Match(COMMA);
+			current_node->right_child->sibling = VariableDeclaratorList();
 		}
 	}
 	if (current->token_type == SEMICOLON)
 		Match(SEMICOLON);
 	else
 		SyntaxError("Expect ; behind a declaration");
+	return current_node;
 }
 
-void Parser::VariableDeclaratorList(TreeNode* & current_node)
+//variable_declarator_list, direct_declarator| direct_declarator
+TreeNode* Parser::VariableDeclaratorList()
 {
-	if (current_node == nullptr)
+	TreeNode* current_node;
+	current_node = DirectDeclarator();
+	TreeNode* tmp = current_node;
+	while (current->token_type == COMMA)
 	{
-		SyntaxError("Variable Difination Error");
-		return;
+		Match(COMMA);
+		tmp ->sibling = DirectDeclarator();
+		tmp = tmp -> sibling;
 	}
-	else //variable_declarator_list, direct_declarator| direct_declarator
-	{
-		TreeNode* variable_treenode = current_node->right_child;
-		if (variable_treenode == nullptr)
-			DirectDeclarator(variable_treenode);
-		else
-			DirectDeclarator(variable_treenode->sibling);
-		while (current->token_type == COMMA)
-		{
-			Match(COMMA);
-			variable_treenode = variable_treenode->sibling;
-			DirectDeclarator(current_node->right_child->sibling);
-		}
-	}
+	return current_node;
 }
 
 //parse IDENTIFIER|IDENTIFIER[NUMBER]|(direct_declarator) list
-void Parser::DirectDeclarator(TreeNode* & current_node)
+TreeNode* Parser::DirectDeclarator()
 {
+	TreeNode* current_node;
 	if (current->token_type == IDENTIFIER)
 	{
 		string identifier_name = current->name;
@@ -180,14 +184,126 @@ void Parser::DirectDeclarator(TreeNode* & current_node)
 		Match(LPAREN);
 		if (current->token_type == IDENTIFIER)
 		{
-			DirectDeclarator(current_node);
+			current_node = DirectDeclarator();
 			Match(IDENTIFIER);
 		}
 		Match(RPAREN);
 	}
+	return current_node;
 }
 
-// parse the parameters and statements
-void Parser::FunctionDeclaration(TreeNode* & current_node)
+// parse the parameters and statements, the right node holds the parameters
+// and the left node holds the statemsnts
+TreeNode* Parser::FunctionDeclaration( )
 {
+	Match(LPAREN);
+	TreeNode* current_node = new TreeNode();
+	current_node->description = "parametes and statements";
+	current_node->right_child =	ParameterList();
+	Match(RPAREN);
+	if(current->token_type == LBRACE)
+	{
+		Match(LBRACE);
+		current_node->left_child = FunctionBody();
+		Match(RBRACE);
+	}
+	else
+		Match(SEMICOLON);
+	return current_node;
+}
+
+TreeNode* Parser::ParameterList()
+{
+	TreeNode* head_node = nullptr;
+	TreeNode* tmp = nullptr;
+	while(1)
+	{
+		TokenType base_type = ERROR;
+		TreeNode* current_node = new TreeNode();
+		switch (current->token_type)
+		{
+		case CHAR:
+			Match(CHAR);
+			base_type = CHAR;
+			break;
+		case INT:
+			Match(INT);
+			base_type = INT;
+			break;
+		case FLOAT:
+			Match(FLOAT);
+			base_type = FLOAT;
+			break;
+		case DOUBLE:
+			Match(DOUBLE);
+			base_type = DOUBLE;
+			break;
+		case BOOL:
+			Match(BOOL);
+			base_type = BOOL;
+			break;
+		default:
+			SyntaxError("Unexpected type specifier");
+		} 
+		current_node ->left_child = new TreeNode(base_type);
+		current_node ->right_child = new TreeNode(current);
+		Match(IDENTIFIER);
+		if(current->token_type == LBRACKET)
+		{
+			current_node->kind = ARRAY_PARAMETER;
+			Match(LBRACKET);
+			Match(RBRACKET);
+		}
+		else
+			current_node->kind = PARAMETER;
+		if(head_node == nullptr){
+			head_node = current_node;
+			tmp = head_node;
+		}
+		else
+		{
+			tmp->sibling = current_node;
+			tmp = current_node;
+		}
+		if(current->token_type == RPAREN)
+			break;
+		else
+			Match(COMMA);
+	}
+	return head_node;
+}
+
+// parse the statements and local declartions
+TreeNode* Parser::FunctionBody() 
+{
+	TreeNode* head_node = nullptr;
+	TreeNode* current_node;
+	bool first = true;
+	while(current->token_type >= INT && current->token_type <= VOID)
+	{
+		current_node = Declaration();
+		if(head_node == nullptr)
+			head_node = current_node;
+		current_node = current_node ->sibling;
+	}
+	current_node = StatementList();
+	return current_node;
+}
+
+TreeNode* Parser::StatementList()
+{
+		TreeNode* head_node = nullptr;
+	TreeNode* current_node;
+	while(current->token_type!=RBRACE){
+		current_node = Statement();
+		if(head_node == nullptr)
+			head_node = current_node;
+		current_node=current_node->sibling;
+	}
+	return head_node;
+}
+
+TreeNode* Parser::Statement()
+{
+	return nullptr;
 }
