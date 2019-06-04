@@ -23,6 +23,12 @@ private:
 	TreeNode* FunctionBody();
 	TreeNode* Statement();
 	TreeNode* StatementList();
+	TreeNode* IfStatement();
+	TreeNode* IterationStatement();
+	TreeNode* JumpStatement();
+	TreeNode* ExpressionStatement();
+	TreeNode* CompoundStatement();
+	TreeNode* Expression();
 public:
 	Parser(Lexical*);
 	void Parse();

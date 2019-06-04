@@ -114,7 +114,7 @@ TreeNode* Parser::Declaration()
 		string token_name = current->name;
 		Match(IDENTIFIER);
 		if (current->token_type == LPAREN)
-			// function tree node holds the function ID, left child holds the return type.
+		// function tree node holds the function ID, left child holds the return type.
 		{
 			current_node->token_type = IDENTIFIER;
 			current_node->token_name = token_name;
@@ -122,8 +122,8 @@ TreeNode* Parser::Declaration()
 			current_node->left_child = new TreeNode(base_type);
 			current_node->right_child = FunctionDeclaration();
 		}
-
-		else //the left child holds variable type, and right child and its sibling holds declarators
+	//the left child holds variable type, and right child and its sibling holds declarators
+		else 
 		{
 			current_node->kind = VARIABLE_DECLARTION;
 			current_node->left_child = new TreeNode(base_type);
@@ -203,9 +203,7 @@ TreeNode* Parser::FunctionDeclaration( )
 	Match(RPAREN);
 	if(current->token_type == LBRACE)
 	{
-		Match(LBRACE);
-		current_node->left_child = FunctionBody();
-		Match(RBRACE);
+		current_node->left_child = CompoundStatement();
 	}
 	else
 		Match(SEMICOLON);
@@ -292,9 +290,10 @@ TreeNode* Parser::FunctionBody()
 
 TreeNode* Parser::StatementList()
 {
-		TreeNode* head_node = nullptr;
+	TreeNode* head_node = nullptr;
 	TreeNode* current_node;
-	while(current->token_type!=RBRACE){
+	while(current->token_type!=RBRACE)
+	{
 		current_node = Statement();
 		if(head_node == nullptr)
 			head_node = current_node;
@@ -303,7 +302,143 @@ TreeNode* Parser::StatementList()
 	return head_node;
 }
 
+TreeNode* Parser::CompoundStatement()
+{
+	Match(LBRACE);
+	TreeNode* node = FunctionBody();
+	Match(RBRACE);
+	return node;
+}
+
 TreeNode* Parser::Statement()
 {
-	return nullptr;
+	TreeNode* head_node = nullptr;
+	switch (current->token_type)
+	{
+	case IF:
+		head_node = IfStatement();
+		break;
+	case WHILE:
+	case DO:
+	case FOR:
+		head_node = IterationStatement();
+		break;
+	case BREAK:
+	case RETURN:
+	case CONTINUE:
+		head_node = JumpStatement();
+		break;
+	case IDENTIFIER:
+		head_node = ExpressionStatement();
+	case LBRACE:
+		head_node = CompoundStatement();
+	default:
+		SyntaxError("unexpected token");
+		break;
+	}
+
+	return head_node;
+}
+
+TreeNode* Parser::IfStatement()
+{
+	TreeNode* head_node = new TreeNode(IF_STATEMENT);
+	head_node->description = "if statement";
+	Match(IF);
+	Match(LPAREN);
+	head_node->left_child = Expression();
+	Match(RPAREN);
+	head_node->right_child = Statement();
+	if(current->token_type == ELSE) //expression's sibling holds else statement 
+	{
+		head_node->description = "if-else statement";
+		head_node->kind = IF_ELSE_STATEMENT;
+		Match(ELSE);
+		head_node->left_child->sibling = Statement();
+	}
+	return head_node;
+}
+
+TreeNode* Parser::IterationStatement(){
+	TreeNode* head_node = nullptr;
+	if(current->token_type == WHILE)
+	{
+		Match(WHILE);
+		Match(LPAREN);
+		head_node ->left_child = Expression();
+		Match(RPAREN);
+		head_node->right_child = Statement();
+	}
+	else if (current->token_type == DO)
+	{
+		Match(DO);
+		head_node -> right_child = Statement();
+		Match(WHILE);
+		Match(LPAREN);
+		head_node -> left_child = Expression();
+		Match(RPAREN);
+	}
+	else
+	{
+		Match(FOR);
+		Match(LPAREN);
+		head_node->left_child = Expression();
+		Match(SEMICOLON);
+		if(head_node->left_child)
+			head_node ->left_child ->sibling = Expression();
+		Match(SEMICOLON);
+		if(head_node->left_child->sibling)
+			head_node->left_child->sibling->sibling = Expression();
+		Match(RPAREN);
+		head_node->right_child = Statement();
+	}
+	return head_node;	
+}
+
+TreeNode* Parser::JumpStatement()
+{
+	TreeNode* head_node = new TreeNode();
+	switch (current->token_type)
+	{
+	case BREAK:
+		Match(BREAK);
+		head_node->kind = BREAK_STATEMENT;
+		head_node->description = "break statement";
+		Match(SEMICOLON);
+		break;
+	case CONTINUE:
+		Match(CONTINUE);
+		head_node->kind = CONTINUE_STATEMENT;
+		head_node->description = "continue statement";
+		Match(SEMICOLON);
+		break;
+	case RETURN:
+		Match(RETURN);
+		head_node->kind = RETURN_STATEMENT;
+		head_node->description = "return statement";
+		if (current->token_type != SEMICOLON)
+		{
+			head_node->left_child = Expression();
+		}
+		Match(SEMICOLON);
+	default:
+		SyntaxError("unexpected token");
+		break;
+	}
+	return head_node;
+}
+
+TreeNode* Parser::ExpressionStatement()
+{
+	TreeNode* head_node = Expression();
+	Match(SEMICOLON);
+	return head_node;
+}
+
+TreeNode* Parser::Expression()
+{
+	if(current->token_type == SEMICOLON)
+		return new TreeNode(EMPTY_EXPRESSION);
+	
+	// TODO
 }
