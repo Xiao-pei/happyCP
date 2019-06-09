@@ -67,6 +67,8 @@ BaseState* BeginStates::GetNextState(char c)
 			return new ENDStates("[", LBRACKET);
 		case ']':
 			return new ENDStates("]", RBRACKET);
+		case '.':
+			return new ENDStates(".", PERIOD);
 		case '\'':
 			return new CHARStates("'");
 		default:

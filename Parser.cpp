@@ -69,6 +69,7 @@ TreeNode* Parser::Declaration()
 		current_node->token_type = IDENTIFIER;
 		current_node->token_name = current->name;
 		current_node->description = "Function declaration";
+		current_node->kind = FUNCTION_DECLARTION;
 		current_node->left_child = new TreeNode(base_type);
 		Match(IDENTIFIER);
 		current_node->right_child = FunctionDeclaration();
@@ -119,6 +120,7 @@ TreeNode* Parser::Declaration()
 			current_node->token_type = IDENTIFIER;
 			current_node->token_name = token_name;
 			current_node->description = "Function declaration";
+			current_node->kind = FUNCTION_DECLARTION;
 			current_node->left_child = new TreeNode(base_type);
 			current_node->right_child = FunctionDeclaration();
 		}
@@ -159,7 +161,7 @@ TreeNode* Parser::VariableDeclaratorList()
 //parse IDENTIFIER|IDENTIFIER[NUMBER]|(direct_declarator) list
 TreeNode* Parser::DirectDeclarator()
 {
-	TreeNode* current_node;
+	TreeNode* current_node = nullptr;
 	if (current->token_type == IDENTIFIER)
 	{
 		string identifier_name = current->name;
@@ -198,8 +200,11 @@ TreeNode* Parser::FunctionDeclaration( )
 {
 	Match(LPAREN);
 	TreeNode* current_node = new TreeNode();
-	current_node->description = "parametes and statements";
-	current_node->right_child =	ParameterList();
+	if(current->token_type != RPAREN)
+	{
+		current_node->description = "parametes and statements";
+		current_node->right_child =	ParameterList();
+	}
 	Match(RPAREN);
 	if(current->token_type == LBRACE)
 	{
@@ -275,7 +280,7 @@ TreeNode* Parser::ParameterList()
 TreeNode* Parser::FunctionBody() 
 {
 	TreeNode* head_node = nullptr;
-	TreeNode* current_node;
+	TreeNode* current_node = nullptr;
 	bool first = true;
 	while(current->token_type >= INT && current->token_type <= VOID)
 	{
@@ -291,7 +296,7 @@ TreeNode* Parser::FunctionBody()
 TreeNode* Parser::StatementList()
 {
 	TreeNode* head_node = nullptr;
-	TreeNode* current_node;
+	TreeNode* current_node = nullptr;
 	while(current->token_type!=RBRACE)
 	{
 		current_node = Statement();
@@ -363,6 +368,7 @@ TreeNode* Parser::IterationStatement(){
 	TreeNode* head_node = nullptr;
 	if(current->token_type == WHILE)
 	{
+		head_node = new TreeNode(WHILE_STATEMENT);
 		Match(WHILE);
 		Match(LPAREN);
 		head_node ->left_child = Expression();
@@ -371,6 +377,7 @@ TreeNode* Parser::IterationStatement(){
 	}
 	else if (current->token_type == DO)
 	{
+		head_node = new TreeNode(DO_WHILE_STATEMENT);
 		Match(DO);
 		head_node -> right_child = Statement();
 		Match(WHILE);
@@ -380,6 +387,7 @@ TreeNode* Parser::IterationStatement(){
 	}
 	else
 	{
+		head_node = new TreeNode(FOR_STATEMENT);
 		Match(FOR);
 		Match(LPAREN);
 		head_node->left_child = Expression();
@@ -435,10 +443,351 @@ TreeNode* Parser::ExpressionStatement()
 	return head_node;
 }
 
-TreeNode* Parser::Expression()
+TreeNode* Parser::Expression() // left child holds expressions seprated by comma
 {
 	if(current->token_type == SEMICOLON)
 		return new TreeNode(EMPTY_EXPRESSION);
-	
-	// TODO
+	TreeNode* head_node = AssigmentExpression();
+	while(current->token_type == COMMA)
+	{
+		Match(COMMA);
+		TreeNode* tmp = new TreeNode();
+		if (tmp)
+		{
+			tmp ->left_child = head_node;
+			tmp->description = "comma seprated expression";
+			tmp->right_child = AssigmentExpression();
+			head_node = tmp;
+		}
+	} 
+	return head_node;
+}
+
+TreeNode* Parser::AssigmentExpression()
+{
+	TreeNode* head_node = nullptr;
+	TreeNode* unary_node = UnaryExpression(); //may return nullptr
+	if(current->token_type == ASSIGN)
+	{
+		if(unary_node!= nullptr && unary_node->kind == UNARY_EXPRESSION)
+		{
+			Match(ASSIGN);
+			head_node = new TreeNode(ASSIGNMENT_EXPRESSION);
+			head_node -> description = "Assign right node to left node";
+			head_node -> left_child = unary_node;
+			head_node -> right_child = AssigmentExpression();
+		}
+		else
+		{
+			SyntaxError("assigment error");
+		}
+		
+	}
+	else
+	{
+		head_node = LogicalOrExpression(unary_node);
+	}
+	return head_node;
+}
+
+TreeNode* Parser::LogicalOrExpression(TreeNode* passdown)
+{
+	TreeNode* head_node = nullptr;
+	TreeNode* left_exp = LogicalAndExpression(passdown);
+	while(current->token_type == LOGICALOR)
+	{
+		Match(LOGICALOR);
+		head_node = new TreeNode(LOGICAL_OR_EXPRESSION);
+		head_node->left_child = left_exp;
+		head_node->right_child = LogicalAndExpression(nullptr);
+		left_exp = head_node;
+	}
+	if(head_node)
+		return head_node;
+	else
+		return left_exp;
+}
+
+TreeNode* Parser::LogicalAndExpression(TreeNode* passdown)
+{
+	TreeNode* head_node = nullptr;
+	TreeNode* left_exp = InclusiveOrExpression(passdown);
+	while(current->token_type == LOGICALAND)
+	{
+		Match(LOGICALAND);
+		head_node = new TreeNode(LOGICAL_AND_EXPRESSION);
+		head_node->left_child = left_exp;
+		head_node->right_child = InclusiveOrExpression(nullptr);
+		left_exp = head_node;
+	}
+	if(head_node)
+		return head_node;
+	else
+		return left_exp;
+}
+
+TreeNode* Parser::InclusiveOrExpression(TreeNode* passdown)
+{
+	TreeNode* head_node = nullptr;
+	TreeNode* left_exp = ExclusiveOrExpression(passdown);
+	while(current->token_type == OR)
+	{
+		Match(OR);
+		head_node = new TreeNode(INCLUSIVE_OR_EXPRESSION);
+		head_node->left_child = left_exp;
+		head_node->right_child = ExclusiveOrExpression(nullptr);
+		left_exp = head_node;
+	}
+	if(head_node)
+		return head_node;
+	else
+		return left_exp;
+}
+
+TreeNode* Parser::ExclusiveOrExpression(TreeNode* passdown)
+{
+	TreeNode* head_node = nullptr;
+	TreeNode* left_exp = AndExpression(passdown);
+	while(current->token_type == XOR)
+	{
+		Match(XOR);
+		head_node = new TreeNode(LOGICAL_AND_EXPRESSION);
+		head_node->left_child = left_exp;
+		head_node->right_child = AndExpression(nullptr);
+		left_exp = head_node;
+	}
+	if(head_node)
+		return head_node;
+	else
+		return left_exp;
+}
+
+TreeNode* Parser::AndExpression(TreeNode* passdown)
+{
+	TreeNode* head_node = nullptr;
+	TreeNode* left_exp = EqualityExpression(passdown);
+	while(current->token_type == AND)
+	{
+		Match(AND);
+		head_node = new TreeNode(AND_EXPRESSION);
+		head_node->left_child = left_exp;
+		head_node->right_child = EqualityExpression(nullptr);
+		left_exp = head_node;
+	}
+	if(head_node)
+		return head_node;
+	else
+		return left_exp;
+}
+
+TreeNode* Parser::EqualityExpression(TreeNode* passdown)
+{
+	TreeNode* head_node = nullptr;
+	TreeNode* left_exp = RelationalExpression(passdown);
+	while(true)
+	{
+		if(current->token_type == EQUAL)
+		{
+			head_node = new TreeNode(EQUALITY_EXPRESSION);
+			Match(EQUAL);
+			head_node->token_type = EQUAL;
+		}	
+		else if(current->token_type == NOTEQUAL)
+		{
+			head_node = new TreeNode(EQUALITY_EXPRESSION);
+			Match(NOTEQUAL);
+			head_node->token_type = NOTEQUAL;
+		}	
+		else
+			break;
+		head_node->left_child = left_exp;
+		head_node->right_child = RelationalExpression(nullptr);
+		left_exp = head_node;
+	}
+	if(head_node)
+		return head_node;
+	else
+		return left_exp;
+}
+
+TreeNode* Parser::RelationalExpression(TreeNode* passdown)
+{
+	TreeNode* head_node = nullptr;
+	TreeNode* left_exp = AdditiveExpression(passdown);
+	while(true)
+	{
+		if(current->token_type == LESSTHAN)
+		{
+			head_node = new TreeNode(RELATIONAL_EXPRESSION);
+			Match(LESSTHAN);
+			head_node->token_type = LESSTHAN;
+		}	
+		else if(current->token_type == GREATERTHAN)
+		{
+			head_node = new TreeNode(RELATIONAL_EXPRESSION);
+			Match(GREATERTHAN);
+			head_node->token_type = GREATERTHAN;
+		}	
+		else
+			break;
+		head_node->left_child = left_exp;
+		head_node->right_child = AdditiveExpression(nullptr);
+		left_exp = head_node;
+	}
+	if(head_node)
+		return head_node;
+	else
+		return left_exp;
+}
+
+TreeNode* Parser::AdditiveExpression(TreeNode* passdown)
+{
+	TreeNode* head_node = nullptr;
+	TreeNode* left_exp = MultiplicativeExpression(passdown);
+	while(true)
+	{
+		if(current->token_type == MIUNS)
+		{
+			head_node = new TreeNode(ADDITIVE_EXPRESSION);
+			Match(MIUNS);
+			head_node->token_type = MIUNS;
+		}	
+		else if(current->token_type == PLUS)
+		{
+			head_node = new TreeNode(ADDITIVE_EXPRESSION);
+			Match(PLUS);
+			head_node->token_type = PLUS;
+		}	
+		else
+			break;
+		head_node->left_child = left_exp;
+		head_node->right_child = MultiplicativeExpression(nullptr);
+		left_exp = head_node;
+	}
+	if(head_node)
+		return head_node;
+	else
+		return left_exp;
+}
+
+TreeNode* Parser::MultiplicativeExpression(TreeNode* passdown)
+{
+	TreeNode* head_node = nullptr;
+	TreeNode* left_exp = passdown;
+	while(true)
+	{
+		if(current->token_type == TIMES)
+		{
+			head_node = new TreeNode(MULTIPLICATIVE_EXPRESSION);
+			Match(TIMES);
+			head_node->token_type = TIMES;
+		}	
+		else if(current->token_type == DIVISION)
+		{
+			head_node = new TreeNode(MULTIPLICATIVE_EXPRESSION);
+			Match(DIVISION);
+			head_node->token_type = DIVISION;
+		}	
+		else
+			break;
+		head_node->left_child = left_exp;
+		head_node->right_child = UnaryExpression();
+		left_exp = head_node;
+	}
+	if(head_node)
+		return head_node;
+	else
+		return left_exp;
+}
+
+TreeNode* Parser::UnaryExpression()
+{
+	TreeNode* head_node = nullptr;
+	if(current ->token_type == INCREMENT)
+	{
+		Match(INCREMENT);
+		head_node = new TreeNode(UNARY_EXPRESSION);
+		head_node->token_type = INCREMENT;
+		head_node->right_child = UnaryExpression();
+	}
+	else if(current ->token_type == DECREMENT)
+	{
+		Match(DECREMENT);
+		head_node = new TreeNode(UNARY_EXPRESSION);
+		head_node->token_type = DECREMENT;
+		head_node->right_child = UnaryExpression();
+	}
+	else if(current ->token_type == IDENTIFIER)
+	{
+		head_node = new TreeNode(UNARY_EXPRESSION);
+		head_node ->left_child = new TreeNode(current);
+		head_node ->right_child = PostfixExpression();
+	}
+	else if (current ->token_type == LPAREN)
+	{
+		Match(LPAREN);
+		head_node = new TreeNode(UNARY_EXPRESSION);
+		head_node ->left_child = Expression();
+		head_node ->right_child = PostfixExpression();
+		Match(RPAREN);
+	}
+	else
+	{
+		SyntaxError("expression error");
+	}
+	return head_node;
+}
+
+TreeNode* Parser::PostfixExpression()
+{
+	TreeNode* head_node = nullptr;
+	TreeNode* tmp = nullptr;
+	while (true)
+	{
+		if(current->token_type == LPAREN)
+		{
+			tmp = new TreeNode(FUNCTION_CALL);
+			Match(LPAREN);
+			if(current->token_type == RPAREN)
+				Match(RPAREN);
+			else
+			{
+				tmp->left_child = Expression();
+			}	
+		}
+		else if(current->token_type == PERIOD)
+		{
+			tmp = new TreeNode(ELEMENT_ACCESS);
+			Match(PERIOD);
+			if(current->token_type == IDENTIFIER)
+			{
+				tmp->left_child = new TreeNode(current);
+				Match(IDENTIFIER);
+			}
+			else
+			{
+				SyntaxError("Must be access an ID ");
+			}	
+		}
+		else if (current->token_type == INCREMENT || current->token_type == DECREMENT)
+		{
+			tmp = new TreeNode(current);
+			tmp->kind = SELF_INC_OR_DEC;
+			Match(current->token_type);
+		}
+		else if (current->token_type == LBRACKET)
+		{
+			Match(LBRACKET);
+			tmp = new TreeNode(ARRARY_ACCESS);
+			tmp->left_child = Expression();
+			Match(RBRACKET);
+		}
+		else{
+			break;
+		}
+		if(!head_node)
+			head_node = tmp;
+		tmp = tmp -> right_child;
+	}
+	return head_node;
 }

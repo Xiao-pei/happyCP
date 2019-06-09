@@ -19,10 +19,10 @@ public:
 		sibling(nullptr), kind(k){}
 
 	TreeNode(Token* t): left_child(nullptr), right_child(nullptr), 
-		sibling(nullptr), token_name(t->name), token_type(t->token_type){}
+		sibling(nullptr),token_type(t->token_type),token_name(t->name){}
 
 	TreeNode(TokenType t): left_child(nullptr), right_child(nullptr), 
-		sibling(nullptr), token_name(), token_type(t){}
+		sibling(nullptr), token_type(t){}
 
 	TreeNode(TokenType t, string n): left_child(nullptr), right_child(nullptr), 
 		sibling(nullptr), token_name(n), token_type(t){}
