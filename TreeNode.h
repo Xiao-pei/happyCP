@@ -13,18 +13,35 @@ public:
 	string token_name;
 	string description;
 	TreeNodeKind kind;
-	TreeNode(): left_child(nullptr), right_child(nullptr), sibling(nullptr){}
 
-	TreeNode(TreeNodeKind k): left_child(nullptr), right_child(nullptr), 
-		sibling(nullptr), kind(k){}
+	TreeNode(): left_child(nullptr), right_child(nullptr), sibling(nullptr),token_type(EMPTY)
+	{
+	}
 
-	TreeNode(Token* t): left_child(nullptr), right_child(nullptr), 
-		sibling(nullptr),token_type(t->token_type),token_name(t->name){}
+	TreeNode(TreeNodeKind k): left_child(nullptr), right_child(nullptr),
+	                          sibling(nullptr), kind(k),token_type(EMPTY)
+	{
+	}
 
-	TreeNode(TokenType t): left_child(nullptr), right_child(nullptr), 
-		sibling(nullptr), token_type(t){}
+	TreeNode(Token* t): left_child(nullptr), right_child(nullptr),
+	                    sibling(nullptr), token_type(t->token_type), token_name(t->name)
+	{
+		if(token_type == IDENTIFIER)
+			kind = ID_KIND;
+	}
 
-	TreeNode(TokenType t, string n): left_child(nullptr), right_child(nullptr), 
-		sibling(nullptr), token_name(n), token_type(t){}
+	TreeNode(TokenType t): left_child(nullptr), right_child(nullptr),
+	                       sibling(nullptr), token_type(t)
+	{
+		if (token_type>=CHAR && token_type<=VOID)
+			kind = TYPE_SPECIFIER;
+	}
+
+	TreeNode(TokenType t, string n): left_child(nullptr), right_child(nullptr),
+	                                 sibling(nullptr), token_name(n), token_type(t)
+	{
+		if(token_type == IDENTIFIER)
+			kind = ID_KIND;
+	}
 };
 #endif

@@ -9,7 +9,7 @@ BeginStates::BeginStates()
 BaseState* BeginStates::GetNextState(char c)
 {
 	BaseState* nexstate;
-	if (c == EOF || c<-1)
+	if (c == EOF || c < -1)
 	{
 		nexstate = new ENDStates("EOF", ENDOFFILE);
 	}

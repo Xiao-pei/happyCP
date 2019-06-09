@@ -7,7 +7,7 @@ class BaseState
 {
 protected:
 	string name;
-	TokenType token_type;
+	TokenType token_type = ERROR;
 	bool putback = false;
 public:
 	virtual ~BaseState() = default;
