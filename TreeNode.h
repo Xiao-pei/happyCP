@@ -28,6 +28,8 @@ public:
 	{
 		if(token_type == IDENTIFIER)
 			kind = ID_KIND;
+		if(token_type == NUMBER || token_type == TRUE || token_type == FALSE)
+			kind = CONSTANT;
 	}
 
 	TreeNode(TokenType t): left_child(nullptr), right_child(nullptr),

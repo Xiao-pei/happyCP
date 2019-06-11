@@ -86,10 +86,6 @@ TreeNode* Parser::Declaration()
 		Match(FLOAT);
 		base_type = FLOAT;
 		break;
-	case DOUBLE:
-		Match(DOUBLE);
-		base_type = DOUBLE;
-		break;
 	case BOOL:
 		Match(BOOL);
 		base_type = BOOL;
@@ -125,15 +121,28 @@ TreeNode* Parser::Declaration()
 			current_node->left_child = new TreeNode(base_type);
 			current_node->right_child = FunctionDeclaration();
 		}
-			//the left child holds variable type, and right child and its sibling holds declarators
+		//the left child holds variable type, and right child and its sibling holds declarators
 		else
 		{
 			current_node->left_child = new TreeNode(base_type);
 			current_node->description = "Variable declaration";
+			if (current->token_type == LBRACKET)
+			{
+				Match(LBRACKET);
+				if (current->token_type != NUMBER)
+					SyntaxError("must be a Number");
+				current_node->right_child = new TreeNode(ARRAY);
+				current_node->right_child->left_child = new TreeNode(IDENTIFIER, token_name);
+				current_node->right_child->right_child = new TreeNode(current);
+				Match(NUMBER);
+				Match(RBRACKET);
+			}
 			current_node->right_child = new TreeNode(IDENTIFIER, token_name);
 			if (current->token_type == COMMA)
+			{
 				Match(COMMA);
-			current_node->right_child->sibling = VariableDeclaratorList();
+				current_node->right_child->sibling = VariableDeclaratorList();
+			}
 			if (current->token_type == SEMICOLON)
 				Match(SEMICOLON);
 			else
@@ -238,10 +247,6 @@ TreeNode* Parser::ParameterList()
 			Match(FLOAT);
 			base_type = FLOAT;
 			break;
-		case DOUBLE:
-			Match(DOUBLE);
-			base_type = DOUBLE;
-			break;
 		case BOOL:
 			Match(BOOL);
 			base_type = BOOL;
@@ -298,7 +303,10 @@ TreeNode* Parser::FunctionBody()
 			current_node = current_node->sibling;
 		}
 	}
-	current_node->sibling = StatementList();
+	if(head_node)
+		current_node->sibling = StatementList();
+	else
+		head_node = StatementList();
 	return head_node;
 }
 
@@ -308,10 +316,16 @@ TreeNode* Parser::StatementList()
 	TreeNode* current_node = nullptr;
 	while (current->token_type != RBRACE)
 	{
-		current_node = Statement();
 		if (head_node == nullptr)
-			head_node = current_node;
-		current_node = current_node->sibling;
+		{
+			head_node = Statement();
+			current_node = head_node;
+		}
+		else
+		{
+			current_node->sibling = Statement();
+			current_node = current_node->sibling;
+		}
 	}
 	return head_node;
 }
@@ -344,8 +358,10 @@ TreeNode* Parser::Statement()
 		break;
 	case IDENTIFIER:
 		head_node = ExpressionStatement();
+		break;
 	case LBRACE:
 		head_node = CompoundStatement();
+		break;
 	default:
 		SyntaxError("unexpected token");
 		break;
@@ -426,23 +442,27 @@ TreeNode* Parser::JumpStatement()
 		Match(BREAK);
 		head_node->kind = BREAK_STATEMENT;
 		head_node->description = "break statement";
+		head_node->token_type = BREAK;
 		Match(SEMICOLON);
 		break;
 	case CONTINUE:
 		Match(CONTINUE);
 		head_node->kind = CONTINUE_STATEMENT;
 		head_node->description = "continue statement";
+		head_node->token_type = CONTINUE;
 		Match(SEMICOLON);
 		break;
 	case RETURN:
 		Match(RETURN);
 		head_node->kind = RETURN_STATEMENT;
 		head_node->description = "return statement";
+		head_node->token_type = RETURN;
 		if (current->token_type != SEMICOLON)
 		{
 			head_node->left_child = Expression();
 		}
 		Match(SEMICOLON);
+		break;
 	default:
 		SyntaxError("unexpected token");
 		break;
@@ -487,6 +507,7 @@ TreeNode* Parser::AssigmentExpression()
 		{
 			Match(ASSIGN);
 			head_node = new TreeNode(ASSIGNMENT_EXPRESSION);
+			head_node->token_type = ASSIGN;
 			head_node->description = "Assign right node to left node";
 			head_node->left_child = unary_node;
 			head_node->right_child = AssigmentExpression();
@@ -686,7 +707,11 @@ TreeNode* Parser::AdditiveExpression(TreeNode* passdown)
 TreeNode* Parser::MultiplicativeExpression(TreeNode* passdown)
 {
 	TreeNode* head_node = nullptr;
-	TreeNode* left_exp = passdown;
+	TreeNode* left_exp;
+	if(passdown)
+		left_exp = passdown;
+	else
+		left_exp = UnaryExpression();
 	while (true)
 	{
 		if (current->token_type == TIMES)
@@ -745,6 +770,14 @@ TreeNode* Parser::UnaryExpression()
 		head_node->right_child = PostfixExpression();
 		Match(RPAREN);
 	}
+	else if (current->token_type == NUMBER || current->token_type == TRUE || current->token_type == FALSE)
+	{
+		head_node = new TreeNode(UNARY_EXPRESSION);
+		head_node->left_child = new TreeNode(current);
+		head_node->left_child->kind = CONSTANT;
+		Match(current->token_type);
+		head_node->right_child = PostfixExpression();
+	}
 	else
 	{
 		SyntaxError("expression error");
@@ -755,7 +788,8 @@ TreeNode* Parser::UnaryExpression()
 TreeNode* Parser::PostfixExpression()
 {
 	TreeNode* head_node = nullptr;
-	TreeNode* tmp = nullptr;
+	TreeNode* tmp;
+	TreeNode* current_node;
 	while (true)
 	{
 		if (current->token_type == LPAREN)
@@ -767,6 +801,7 @@ TreeNode* Parser::PostfixExpression()
 			else
 			{
 				tmp->left_child = Expression();
+				Match(RPAREN);
 			}
 		}
 		else if (current->token_type == PERIOD)
@@ -800,9 +835,16 @@ TreeNode* Parser::PostfixExpression()
 		{
 			break;
 		}
-		if (!head_node)
+		if(head_node)
+		{
+			current_node->right_child = tmp;
+			current_node = tmp;
+		}
+		else
+		{
 			head_node = tmp;
-		tmp = tmp->right_child;
+			current_node = head_node;
+		}
 	}
 	return head_node;
 }

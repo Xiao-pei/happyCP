@@ -20,7 +20,6 @@ enum TokenType
 	CHAR,
 	INT,
 	FLOAT,
-	DOUBLE,
 	BOOL,
 	VOID,
 	TRUE,
@@ -99,6 +98,7 @@ enum TreeNodeKind
 	FUNCTION_CALL,
 	ELEMENT_ACCESS,
 	SELF_INC_OR_DEC,
+	CONSTANT,
 	ARRAY_ACCESS
 };
 
@@ -113,7 +113,6 @@ static string TokenTypeNames[82] = {
 	"CHAR",
 	"INT",
 	"FLOAT",
-	"DOUBLE",
 	"BOOL",
 	"VOID",
 	"TRUE",
@@ -186,12 +185,13 @@ static string TokenTypeNames[82] = {
 	"FUNCTION_CALL",
 	"ELEMENT_ACCESS",
 	"SELF_INC_OR_DEC",
+	"CONSTANT",
 	"ARRAY_ACCESS"
 };
 
 static map<string, TokenType> RWordsMap = {
 	{"if", IF}, {"else", ELSE}, {"while", WHILE}, {"do", DO}, {"char", CHAR}, {"const", CONST},
-	{"int", INT}, {"float", FLOAT}, {"double", DOUBLE}, {"bool", BOOL}, {"void", VOID}, {"enum", ENUM},
+	{"int", INT}, {"float", FLOAT}, {"bool", BOOL}, {"void", VOID}, {"enum", ENUM},
 	{"true", TRUE}, {"false", FALSE}, {"for", FOR}, {"break", BREAK}, {"return", RETURN}, {"continue", CONTINUE}
 }; // add reserved words into ths list
 

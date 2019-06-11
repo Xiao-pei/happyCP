@@ -17,8 +17,8 @@ Token::Token(TokenType t, string n, int l)
 string Token::to_string()
 {
 	if (token_type == ERROR)
-		return "Type: \x1b[31m" + TokenTypeNames[token_type] + "\033[0m Name: " + name;
-	return "Type: \033[22;36m" + TokenTypeNames[token_type] + "\033[0m Name: \x1b[36m" + name + "\033[0m";
+		return std::to_string(line_num) +": Type: \x1b[31m" + TokenTypeNames[token_type] + "\x1b[0m Name: " + name;
+	return  std::to_string(line_num)  +": Type: \x1b[32m" + TokenTypeNames[token_type] + "\x1b[0m Name: \x1b[36m" + name + "\x1b[0m";
 }
 
 Token::~Token()

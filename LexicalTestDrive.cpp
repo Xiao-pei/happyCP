@@ -6,7 +6,7 @@ void printSpace(int count)
 {
 	while (count--)
 	{
-		cout<<"  ";
+		cout<<"\x1b[100m |\x1b[40m";
 	}
 }
 
@@ -14,20 +14,26 @@ void printTree(TreeNode* root,int depth)
 {
 	if(root->left_child)
 	{
-		//cout<<"L: ";
+		cout<<"\x1b[33m";
 		printTree(root->left_child,depth+1);
+		//cout<<"\033[0m";
 	}
 	printSpace(depth);
-	cout<<"kind:  \x1b[31m"<<TokenTypeNames[root->kind]<<"\033[0m ID name: "<<root->token_name<<" token type: "<<TokenTypeNames[root->token_type]<<endl;
+	if(root->token_name.length()>=1)
+		cout<<"Kind: \x1b[36m"<<TokenTypeNames[root->kind]<<"\033[0m ID name: "<<root->token_name<<"  Token type: "<<TokenTypeNames[root->token_type]<<"\033[0m"<<endl;
+	else
+		cout<<"Kind: \x1b[36m"<<TokenTypeNames[root->kind]<<"\033[0m  Token type: "<<TokenTypeNames[root->token_type]<<"\033[0m"<<endl;
 	if(root->right_child)
 	{
-		//cout<<"R: ";
+		//cout<<"\x1b[36m";
 		printTree(root->right_child,depth+1);
+		//cout<<"\033[0m";
 	}
 	if(root->sibling)
 	{
-		//cout<<"S: ";
+		//cout<<"\x1b[36m";
 		printTree(root->sibling,depth);
+		//cout<<"\033[0m";
 	}
 }
 
@@ -42,7 +48,6 @@ int main(int argc, char* argv[])
 	Parser* parser = new Parser(lexical);
 	parser->Parse();
 	TreeNode* node = parser->getRoot();
-	cout << node->description << endl;
 	printTree(node,0);
 	// Token *token = lexical->get_token();
 	// while (true)
